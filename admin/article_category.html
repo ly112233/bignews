@@ -52,4 +52,159 @@
         </div>
     </div>
 
+    <!-- m模态框 -->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel">zzz</h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <!-- 隐藏域 -->
+                        <input type="hidden" name="id" id="categoryId">
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">分类名:</label>
+                            <input type="text" name='name' class="form-control" id="recipient-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">分类:</label>
+                            <input class="form-control" name="slug" id="message-text"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="addOr">aaaaa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script id="category_list" type="text/html">
+        {{each data v}}
+        <tr>
+            <td>{{v.name}}</td>
+            <td>{{v.slug}}</td>
+            <td class="text-center">
+                <a href="javascript:void(0)" data-toggle="modal" class=" btn btn-info btn-xs" data-target="#myModal">编辑</a>
+                <a href="javascript:void(0)" data-id={{v.id}} class="btn btn-danger btn-xs">删除</a>
+            </td>
+        </tr>
+        {{/each}}
+    </script>
+
+    <script src="./libs/http.js"></script>
+    <script>
+        $(function () {
+            function getData() {
+                $.ajax({
+                    url: BigNew.category_list,
+                    success: v => {
+                        // console.log(v);
+                        let res = template('category_list', v);
+                        $('tbody').html(res)
+                    }
+                })
+            }
+            getData();
+
+            $('#myModal').on('show.bs.modal', function (e) {
+                if (e.relatedTarget === $('#xinzengfenlei')[0]) {
+                    $('#myModalLabel').text('新增分类');
+                    $('#addOr').text('新增').addClass('btn-primary').removeClass('btn-success');
+                } else {
+                    $('#myModalLabel').text('编辑分类');
+                    $('#addOr').text('编辑').addClass('btn-success').removeClass('btn-primary');
+
+                    $('#recipient-name').val($(e.relatedTarget).parent().prev().prev().text().trim());
+                    $('#message-text').val($(e.relatedTarget).parent().prev().text().trim());
+                    $('#categoryId').val($(e.relatedTarget).attr('data-id'));
+
+
+                }
+            })
+
+            $('#addOr').on('click', function () {
+                if ($(this).hasClass('btn-primary')) {
+                    let name = $('#recipient-name').val().trim();
+                    let slug = $('#message-text').val().trim();
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_add,
+                        data: {
+                            name: name,
+                            slug: slug
+                        },
+                        success: v => {
+                            if (v.code == 201) {
+                                alert('新增成功');
+                                getData();
+
+                                $('#myModal').modal('hide')
+
+                                $('#recipient-name').val("");
+                                $('#message-text').val("");
+                            }
+                        }
+                    })
+
+                } else {
+                    // let data = $('#myModal form').serialize();
+
+                    var categoryId = $('#categoryId').val().trim(); //id
+                    var categoryName = $('#recipient-name').val().trim(); //文章类别名称
+                    var categorySlug = $('#message-text').val().trim();//文章类别 别名
+
+                    $.ajax({
+                        type: 'post',
+                        url: BigNew.category_edit,
+                        data: {
+                            id: categoryId,
+                            name: categoryName,
+                            slug: categorySlug
+                        },
+                        // data:data,
+                        success: function (v) {
+                            console.log(v);
+
+                        }
+                    })
+
+                }
+
+            })
+
+            $('.btn-default').on('click', () => {
+                $('#myModal form')[0].reset();
+            })
+
+            $('tbody').on('click', '.btn-danger', function () {
+                if(confirm('确定删除吗')){
+                    let categoryId = $(this).attr('data - id');
+                    $.ajax({
+                        type:'post',
+                        url:BigNew.category_delete,
+                        data:{
+                            id:categoryId
+                        },
+                        success:v=>{
+                            // console.log(v);
+                            if (v.code==204) {
+                                alert('v.msg');
+                                getData();
+                            }
+                            
+                        }
+                    })
+                }
+            })
+
+        })
+
+    </script>
+
 </html>
