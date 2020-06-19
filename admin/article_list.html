@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="./css/iconfont.css">
     <link rel="stylesheet" href="./css/main.css">
     <script src="./libs/jquery-1.12.4.min.js"></script>
+    <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
+    <script src="./libs/jquery.twbsPagination.js"></script>
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
 </head>
@@ -69,9 +71,101 @@
                 </tbody>
             </table>
             <div class="row text-center">
+                <!-- 分页插件 -->
+                <ul id="pagination" class="pagination-sm"></ul>
+                <p style="display: none;">没有数据!</p>
             </div>
         </div>
     </div>
+
+    <!-- 文章类别 -->
+    <script id="category" type="text/html">
+        <option value="">所有分类</option>
+    {{each data v}}  
+        <option value="{{v.id}}">{{v.name}}</option>
+    {{/each}}
+    </script>
+
+
+    <!-- 文章主体 -->
+    <script id="main" type="text/html">
+    {{each data.data v}}
+    <tr>
+        <td>{{v.title}}</td>
+        <td>{{v.author}}</td>
+        <td>{{v.category}}</td>
+        <td class="text-center">{{v.date}}</td>
+        <td class="text-center">{{v.state}}</td>
+        <td class="text-center">
+            <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
+            <a href="javascript:void(0);" data-id="{{v.id}}" class="btn btn-danger btn-xs delete">删除</a>
+        </td>
+    </tr>
+    {{/each}}
+    </script>
+
+    <script src="./libs/http.js"></script>
+    <script>
+        $(function () {
+            $.ajax({
+                url: BigNew.category_list,
+                success: v => {
+                    // console.log(v);
+                    let resHtml = template('category', v)
+                    $('#selCategory').html(resHtml)
+                }
+            })
+
+            // 声明一个变量用来记录当前页
+            let currentPage;
+
+            function getData(myPage, callback) {
+                $.ajax({
+                    url: BigNew.article_query,
+                    data: {
+                        type: $('#selCategory').val().trim(),
+                        state: $('#selStatus').val().trim(),
+                        page: 1,
+                        perpage: 3,
+                    },
+                    success: backData => {
+                        // console.log(backData);
+                        if (backData.code == 200) {
+                            let res = template('main', backData)
+                            $('tbody').html(res)
+                            // 判断
+                            if (backData.data.data.length != 0 && callback != null) {
+                                $('#pagination').show().next('p').hide();
+                                callback(backData);
+                            } else {
+
+                            }
+                        }
+
+                    }
+                })
+            }
+
+            getData(1, function (backData) {
+                //分页插件
+                $('#pagination').twbsPagination({
+                    totalPages: backData.data.totalPage, //总页数
+                    visiblePages: 5, //可见的页码
+                    first: '首页',
+                    prev: '上一页',
+                    next: '下一页',
+                    last: '尾页',
+                    // 这个事件是页码被点击后的回调函数. 
+                    onPageClick: function (event, page) {
+                        currentPage = page; //给当前页赋值.
+                        //继续发送ajax请求. 获取当前点击的当前页的文章数据并渲染. 
+                        getData(page);
+                    }
+                });
+            })
+
+        })
+    </script>
 </body>
 
 </html>
